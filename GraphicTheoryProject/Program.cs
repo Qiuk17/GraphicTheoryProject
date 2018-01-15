@@ -7,24 +7,49 @@ using System.IO;
 
 namespace GraphicTheoryProject
 {
+    class Movie
+    {
+        private int nameHashCode;
+        private int typeHashCode;
+        private string movieName;
+        private string movieType;
+        private double movieMark;
+        public Movie(string name, string type, double mark) 
+        {
+            movieName = name;
+            movieType = type;
+            nameHashCode = name.GetHashCode();
+            typeHashCode = type.GetHashCode();
+            movieMark = mark;
+        }
+        public string GetMovieName()
+        {
+            return movieName;
+        }
+        public string GetMovieTyoe()
+        {
+            return movieType;
+        }
+        public double GetMovieMark()
+        {
+            return movieMark;
+        }
+        public override int GetHashCode()
+        {
+            
+        }
+    }
     class Program
     {
         static void Main(string[] args)
         {
-            try
+            using (StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\movie.csv", Encoding.UTF8, true))
             {
-                FileStream fs = new FileStream(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\user.csv", FileMode.Open);
-                byte[] fileContent = new byte[fs.Length];
-                char[] fileChar = new char[fs.Length / 2];
-                fs.Read(fileContent, 0, (int)fs.Length);
-                Decoder d = Encoding.UTF8.GetDecoder();
-                d.GetChars(fileContent, 3, fileContent.Length - 3, fileChar, 0);
-                Console.Write(fileChar);
-                Console.WriteLine(d.GetHashCode());
-            }
-            catch(IOException e)
-            {
-                Console.WriteLine(e.Message);
+                Console.Write(sr.ReadToEnd());
+                Movie movie1 = new Movie("resr", "resr", 9.922);
+                Movie movie2 = new Movie("resr", "resr", 9.922);
+                Console.Write(movie1.GetHashCode());
+                Console.Write(movie2.GetHashCode());
             }
 
             Console.ReadKey();
