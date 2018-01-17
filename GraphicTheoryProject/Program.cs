@@ -60,14 +60,22 @@ namespace GraphicTheoryProject
                 }
             }
         }
-        public void GetShortestPath(out int[] Path)
+        public void GetSingleSourceShortestPath(int source, out int[][] Path)
         {
-            List<int> listPath = new List<int>();
+            List<int>[] SourcedPath = new List<int>[nodes.Length];
+
             int[] d = new int[nodes.Length];
+            int[] p = new int[nodes.Length];
+            for(int i = 0; i < nodes.Length; i++)
+            {
+                d[i] = 5000; p[i] = -1;
+            }
             
-            
-            listPath.Reverse();
-            Path = listPath.ToArray();
+            for(int i = 0; i < nodes.Length; i++)
+            {
+                SourcedPath[i].Reverse();
+                Path[i] = SourcedPath[i].ToArray();
+            }
         }
     }
 
