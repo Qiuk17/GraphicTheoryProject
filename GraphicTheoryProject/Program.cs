@@ -8,13 +8,22 @@ using System.IO;
 namespace GraphicTheoryProject
 {
 
-    class article
+    class Article
     {
         private int ID; //文档ID编号
         private int discretizatedID; //离散化编号
         private HashSet<int> reference; //参考文献的离散化编号存储
 
         private int cenDegree, cenDegreeB; //中心度，介度中心度
+
+        public Article(int ID_, int disID_)
+        {
+            reference = new HashSet<int>();
+            ID = ID_;
+            discretizatedID = disID_;
+            cenDegree = cenDegreeB = 0;
+        }
+
         public void IncreaseCenDegree(int increaseBy, bool isBType)
         {
             if (isBType) cenDegreeB += increaseBy;
@@ -29,19 +38,44 @@ namespace GraphicTheoryProject
         {
             return reference.Add(refDiscretizatedID);
         }
-
     }
 
     class Program
     {
+        static void ReadIntFromFile(string str, out List<int> array)
+        {
+            int prec = -1;
+            array = new List<int>();
+            List<int> listCache = new List<int>();
+            char[] splitChars = new char[] { ',', ';', ' ', '\n' };
+            string[] intS = str.Split(splitChars);
+            for (int i = 0; i < intS.Length; i++) //Console.WriteLine(intS[i]);
+            {
+                if(int.TryParse(intS[i], out int intCache)) listCache.Add(intCache);
+            }
+            listCache.Sort();
+            foreach(int intCache in listCache)
+            {
+                if (intCache != prec) array.Add(intCache);
+                prec = intCache;
+            }
+        }
+
         static void Main(string[] args)
         {
-            using (StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true))
+            try
             {
-                while (!sr.EndOfStream)
-                    System.Console.Write(sr.ReadLine());
-                
-
+                StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true);
+                ReadIntFromFile(sr.ReadToEnd(), out List<int> listArticleID);
+                foreach(int seg in listArticleID)
+                {
+                    Console.WriteLine(seg);
+                }
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message);
+                Console.ReadKey();
             }
 
             Console.ReadKey();
