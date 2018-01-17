@@ -40,7 +40,7 @@ namespace GraphicTheoryProject
         }
         public override string ToString()
         {
-            return ID.ToString() + '+' + discretizatedID.ToString();
+            return ID.ToString() + '+' + discretizatedID.ToString() + "\nreference to" + reference.ToString();
         }
 
     }
@@ -82,20 +82,34 @@ namespace GraphicTheoryProject
                 articleSet[cnt] = new Article(ID, cnt++);
         }
 
+        static void AddReferencesToArticle(ref Article[] article, string originString, Dictionary<int, int> dictionary)
+        {
+            char[] splitChar = new char[] { ',', ';', ' ' };
+            string[] parameters = originString.Split(splitChar);
+            if(!int.TryParse(parameters[0], out int disID)) return;
+            for (int i = 1; i < parameters.Length; i++)
+            {
+                if(int.TryParse(parameters[i], out int intCache))
+                    article[disID].AddReference(intCache);
+            }
+                
+        }
+
         static void Main(string[] args)
         {
             try
             {
                 StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true);
-                ReadIntFromFile(sr.ReadToEnd(), out List<int> listArticleID);
+                System.Text.RegularExpressions.Regex.Replace(FileContent, "_", "");
+                ReadIntFromFile(FileContent, out List<int> listArticleID);
                 DiscretizateArticleID(listArticleID, out Dictionary<int, int> dictionaryDiscretization);
                 InitialArticle(listArticleID, out Article[] articleSet);
-                foreach(var article in articleSet)
-                {
+                sr.BaseStream.Seek(0, SeekOrigin.Begin);
+                while (!sr.EndOfStream) AddReferencesToArticle(ref articleSet, sr.ReadLine(), dictionaryDiscretization);
+                foreach (var article in articleSet)
                     Console.WriteLine(article.ToString());
-                }
+                Console.ReadKey(); 
 
-                Console.ReadKey();
             }
             catch (IOException e)
             {
