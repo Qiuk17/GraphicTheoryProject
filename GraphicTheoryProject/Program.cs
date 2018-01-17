@@ -8,24 +8,39 @@ using System.IO;
 namespace GraphicTheoryProject
 {
 
-    class MovieType
+    class article
     {
-        private string movieType;
-        private HashSet<Movie> movieOfThisType;
-    }
+        private int ID; //文档ID编号
+        private int discretizatedID; //离散化编号
+        private HashSet<int> reference; //参考文献的离散化编号存储
 
-    class Movie
-    {
-        
+        private int cenDegree, cenDegreeB; //中心度，介度中心度
+        public void IncreaseCenDegree(int increaseBy, bool isBType)
+        {
+            if (isBType) cenDegreeB += increaseBy;
+            else cenDegree += increaseBy;
+        }
+
+        public HashSet<int> GetReference()
+        {
+            return reference;
+        }
+        public bool AddReference(int refDiscretizatedID)
+        {
+            return reference.Add(refDiscretizatedID);
+        }
+
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            using (StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\movie.csv", Encoding.UTF8, true))
+            using (StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true))
             {
-                Console.Write(sr.ReadToEnd());
+                while (!sr.EndOfStream)
+                    System.Console.Write(sr.ReadLine());
+                
 
             }
 
