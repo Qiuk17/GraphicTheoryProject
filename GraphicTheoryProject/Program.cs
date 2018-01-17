@@ -40,7 +40,12 @@ namespace GraphicTheoryProject
         }
         public override string ToString()
         {
-            return ID.ToString() + '+' + discretizatedID.ToString();
+            string ret = ID.ToString() + '\n';
+            foreach(var seg in reference)
+            {
+                ret += seg.ToString() + ' ';
+            }
+            return ret;
         }
 
     }
@@ -81,20 +86,47 @@ namespace GraphicTheoryProject
             foreach(int ID in orderedIDList)
                 articleSet[cnt] = new Article(ID, cnt++);
         }
+        
+        static void AddReferenceToArticle(ref Article[] articles, string FileContent, Dictionary<int, int> dictionary)
+        {
+            foreach (string Line in FileContent.Split(new char[] { '\n' }))
+            {
+                string[] segments = Line.Split(new char[] { ',', ';' });
+                if(int.TryParse(segments[0], out int articleID))
+                {
+                    int discretizatedArticleID;
+                    if(dictionary.ContainsKey(articleID))
+                    {
+                        discretizatedArticleID = dictionary[articleID];
+                        for(int i = 1; i < segments.Length; i++)
+                        {
+                            if(int.TryParse(segments[i], out int refID))
+                            {
+                                if(dictionary.ContainsKey(refID))
+                                {
+                                    articles[discretizatedArticleID].AddReference(dictionary[refID]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         static void Main(string[] args)
         {
             try
             {
                 StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true);
-                ReadIntFromFile(sr.ReadToEnd(), out List<int> listArticleID);
+                string FileContent = sr.ReadToEnd();
+                ReadIntFromFile(FileContent, out List<int> listArticleID);
                 DiscretizateArticleID(listArticleID, out Dictionary<int, int> dictionaryDiscretization);
                 InitialArticle(listArticleID, out Article[] articleSet);
-                foreach(var article in articleSet)
+                AddReferenceToArticle(ref articleSet, FileContent, dictionaryDiscretization);
+                foreach(var test in articleSet)
                 {
-                    Console.WriteLine(article.ToString());
+                    Console.WriteLine(test.ToString());
                 }
-
                 Console.ReadKey();
             }
             catch (IOException e)
