@@ -10,44 +10,65 @@ namespace GraphicTheoryProject
 
     class Article
     {
-        private int ID; //文档ID编号
-        private int discretizatedID; //离散化编号
-        private HashSet<int> reference; //参考文献的离散化编号存储
-
-        private int cenDegree, cenDegreeB; //中心度，介度中心度
+        public int ID { get; } //文档ID编号
+        public int DiscretizatedID { get; } //离散化编号
+        public HashSet<int> Reference { get; } //参考文献的离散化编号存储
 
         public Article(int ID_, int disID_)
         {
-            reference = new HashSet<int>();
+            Reference = new HashSet<int>();
             ID = ID_;
-            discretizatedID = disID_;
-            cenDegree = cenDegreeB = 0;
-        }
-
-        public void IncreaseCenDegree(int increaseBy, bool isBType)
-        {
-            if (isBType) cenDegreeB += increaseBy;
-            else cenDegree += increaseBy;
+            DiscretizatedID = disID_;
         }
 
         public HashSet<int> GetReference()
         {
-            return reference;
+            return Reference;
         }
         public bool AddReference(int refDiscretizatedID)
         {
-            return reference.Add(refDiscretizatedID);
+            return Reference.Add(refDiscretizatedID);
         }
         public override string ToString()
         {
             string ret = ID.ToString() + '\n';
-            foreach(var seg in reference)
+            foreach(var seg in Reference)
             {
                 ret += seg.ToString() + ' ';
             }
             return ret;
         }
+    }
 
+    class Graph //用于计算的图
+    {
+        private class Node //图的节点
+        {
+            public int ID;
+            public HashSet<int> succs;
+        }
+        private Node[] nodes;
+        public void InitGraph(Article[] articles)
+        {
+            nodes = new Node[articles.Length];
+            foreach(var article in articles)
+            {
+                foreach (var refDiscretizatedID in article.Reference)
+                {
+                    nodes[article.ID].succs.Add(refDiscretizatedID);
+                    nodes[refDiscretizatedID].succs.Add(article.ID);
+                }
+            }
+        }
+        public void GetShortestPath(out int[] Path)
+        {
+            List<int> listPath = new List<int>();
+            int[] d = new int[nodes.Length];
+            
+            
+            listPath.Reverse();
+            Path = listPath.ToArray();
+        }
     }
 
     class Program
