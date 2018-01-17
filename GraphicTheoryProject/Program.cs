@@ -38,6 +38,11 @@ namespace GraphicTheoryProject
         {
             return reference.Add(refDiscretizatedID);
         }
+        public override string ToString()
+        {
+            return ID.ToString() + '+' + discretizatedID.ToString();
+        }
+
     }
 
     class Program
@@ -61,24 +66,43 @@ namespace GraphicTheoryProject
             }
         }
 
+        static void DiscretizateArticleID(List<int> orderedIDList, out Dictionary<int, int> dictionaryDiscretization)
+        {
+            dictionaryDiscretization = new Dictionary<int, int>();
+            int cnt = 0;
+            foreach(int ID in orderedIDList)
+                dictionaryDiscretization.Add(ID, cnt++);
+        }
+
+        static void InitialArticle(List<int> orderedIDList, out Article[] articleSet)
+        {
+            articleSet = new Article[orderedIDList.Count];
+            int cnt = 0;
+            foreach(int ID in orderedIDList)
+                articleSet[cnt] = new Article(ID, cnt++);
+        }
+
         static void Main(string[] args)
         {
             try
             {
                 StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true);
                 ReadIntFromFile(sr.ReadToEnd(), out List<int> listArticleID);
-                foreach(int seg in listArticleID)
+                DiscretizateArticleID(listArticleID, out Dictionary<int, int> dictionaryDiscretization);
+                InitialArticle(listArticleID, out Article[] articleSet);
+                foreach(var article in articleSet)
                 {
-                    Console.WriteLine(seg);
+                    Console.WriteLine(article.ToString());
                 }
+
+                Console.ReadKey();
             }
             catch (IOException e)
             {
                 Console.WriteLine(e.Message);
                 Console.ReadKey();
             }
-
-            Console.ReadKey();
+            
         }
     }
 }
