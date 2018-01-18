@@ -38,32 +38,39 @@ namespace GraphicTheoryProject
 
     class Graph //用于计算的图
     {
-        private class Node //图的节点
+        public class Node //图的节点
         {
-            public HashSet<int> succs;
-            public Node() { succs = new HashSet<int>(); }
+            public HashSet<int> Succs { get; set; }
+            public int CenDegreeA { get; set; } //该节点出现在其他节点对上最短路径上的次数（不包括两个端点）
+            public int CenDegreeB { get; set; } //该节点到其他所有联通的节点的最短路径之和
+            public int NumReachTo { get; set; } //该节点可以联通的节点数量（不包括自身）
+            public Node() { Succs = new HashSet<int>(); CenDegreeA = CenDegreeB = NumReachTo = 0; }
+            public override string ToString()
+            {
+                return CenDegreeA.ToString() + ' ' + CenDegreeB.ToString() + ' ' + NumReachTo.ToString();
+            }
         }
-        private Node[] nodes;
+        public Node[] Nodes { get; set; }
         public void InitGraph(Article[] articles)
         {
-            nodes = new Node[articles.Length];
+            Nodes = new Node[articles.Length];
             for (int i = 0; i < articles.Length; i++)
-                nodes[i] = new Node();
+                Nodes[i] = new Node();
             foreach(var article in articles)
             {
                 foreach (var refDiscretizatedID in article.Reference)
                 {
-                    nodes[article.DiscretizatedID].succs.Add(refDiscretizatedID);
-                    nodes[refDiscretizatedID].succs.Add(article.DiscretizatedID);
+                    Nodes[article.DiscretizatedID].Succs.Add(refDiscretizatedID);
+                    Nodes[refDiscretizatedID].Succs.Add(article.DiscretizatedID);
                 }
             }
         }
         public void GetSingleSourceShortestPath(int source, out int[] Path) 
         {
-            List<int>[] SourcedPath = new List<int>[nodes.Length];
-            Path = new int[nodes.Length];
-            int[] d = new int[nodes.Length];
-            for(int i = 0; i < nodes.Length; i++)
+            List<int>[] SourcedPath = new List<int>[Nodes.Length];
+            Path = new int[Nodes.Length];
+            int[] d = new int[Nodes.Length];
+            for(int i = 0; i < Nodes.Length; i++)
             {
                 d[i] = 500000; Path[i] = -1;
             }
@@ -73,13 +80,34 @@ namespace GraphicTheoryProject
             while(Q.Count != 0)
             {
                 int u = Q.Dequeue();
-                foreach(var nextNode in nodes[u].succs)
+                foreach(var nextNode in Nodes[u].Succs)
                 {
                     if(1 + d[u] < d[nextNode])
                     {
                         d[nextNode] = 1 + d[u];
                         Path[nextNode] = u;
                         Q.Enqueue(nextNode);
+                    }
+                }
+            }
+        }
+
+        public void GraphAnalysis()
+        {
+            for(int i = 0; i < Nodes.Length; i++)
+            {
+                GetSingleSourceShortestPath(i, out int[] Path);
+                for(int j = 0; j < Nodes.Length; j++)
+                {
+                    if (Path[j] == -1) continue;
+                    else
+                    {
+                        Nodes[i].NumReachTo++;
+                        for (int u = Path[j]; Path[u] != -1; u = Path[u])
+                        {
+                            Nodes[i].CenDegreeA++;
+                            Nodes[u].CenDegreeB++;
+                        }
                     }
                 }
             }
@@ -161,13 +189,8 @@ namespace GraphicTheoryProject
                 AddReferenceToArticle(ref articleSet, FileContent, dictionaryDiscretization);
                 Graph test = new Graph();
                 test.InitGraph(articleSet);
-                for(int i = 0; i < articleSet.Length; i++)
-                {
-                    Console.WriteLine(i.ToString() + " Path:");
-                    test.GetSingleSourceShortestPath(i, out int[] Path);
-                    //foreach (var j in Path) Console.Write(j.ToString() + ' ');
-                    //Console.WriteLine();
-                }
+                test.GraphAnalysis();
+
                 Console.ReadKey();
             }
             catch (IOException e)
