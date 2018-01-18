@@ -21,10 +21,6 @@ namespace GraphicTheoryProject
             DiscretizatedID = disID_;
         }
 
-        public HashSet<int> GetReference()
-        {
-            return Reference;
-        }
         public bool AddReference(int refDiscretizatedID)
         {
             return Reference.Add(refDiscretizatedID);
@@ -44,37 +40,48 @@ namespace GraphicTheoryProject
     {
         private class Node //图的节点
         {
-            public int ID;
             public HashSet<int> succs;
+            public Node() { succs = new HashSet<int>(); }
         }
         private Node[] nodes;
         public void InitGraph(Article[] articles)
         {
             nodes = new Node[articles.Length];
+            for (int i = 0; i < articles.Length; i++)
+                nodes[i] = new Node();
             foreach(var article in articles)
             {
                 foreach (var refDiscretizatedID in article.Reference)
                 {
-                    nodes[article.ID].succs.Add(refDiscretizatedID);
-                    nodes[refDiscretizatedID].succs.Add(article.ID);
+                    nodes[article.DiscretizatedID].succs.Add(refDiscretizatedID);
+                    nodes[refDiscretizatedID].succs.Add(article.DiscretizatedID);
                 }
             }
         }
-        public void GetSingleSourceShortestPath(int source, out int[][] Path)
+        public void GetSingleSourceShortestPath(int source, out int[] Path) 
         {
             List<int>[] SourcedPath = new List<int>[nodes.Length];
-
+            Path = new int[nodes.Length];
             int[] d = new int[nodes.Length];
-            int[] p = new int[nodes.Length];
             for(int i = 0; i < nodes.Length; i++)
             {
-                d[i] = 5000; p[i] = -1;
+                d[i] = 500000; Path[i] = -1;
             }
-            
-            for(int i = 0; i < nodes.Length; i++)
+            Queue<int> Q = new Queue<int>();
+            Q.Enqueue(source);
+            d[source] = 0;
+            while(Q.Count != 0)
             {
-                SourcedPath[i].Reverse();
-                Path[i] = SourcedPath[i].ToArray();
+                int u = Q.Dequeue();
+                foreach(var nextNode in nodes[u].succs)
+                {
+                    if(1 + d[u] < d[nextNode])
+                    {
+                        d[nextNode] = 1 + d[u];
+                        Path[nextNode] = u;
+                        Q.Enqueue(nextNode);
+                    }
+                }
             }
         }
     }
@@ -152,9 +159,14 @@ namespace GraphicTheoryProject
                 DiscretizateArticleID(listArticleID, out Dictionary<int, int> dictionaryDiscretization);
                 InitialArticle(listArticleID, out Article[] articleSet);
                 AddReferenceToArticle(ref articleSet, FileContent, dictionaryDiscretization);
-                foreach(var test in articleSet)
+                Graph test = new Graph();
+                test.InitGraph(articleSet);
+                for(int i = 0; i < articleSet.Length; i++)
                 {
-                    Console.WriteLine(test.ToString());
+                    Console.WriteLine(i.ToString() + " Path:");
+                    test.GetSingleSourceShortestPath(i, out int[] Path);
+                    //foreach (var j in Path) Console.Write(j.ToString() + ' ');
+                    //Console.WriteLine();
                 }
                 Console.ReadKey();
             }
