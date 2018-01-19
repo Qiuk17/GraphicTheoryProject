@@ -181,7 +181,7 @@ namespace GraphicTheoryProject
         {
             try
             {
-                StreamReader sr = new StreamReader(@"C:\Users\35031\source\repos\GraphicTheoryProject\GraphicTheoryProject\data\paper.csv", Encoding.UTF8, true);
+                StreamReader sr = new StreamReader(@"paper.csv", Encoding.UTF8, true);
                 string FileContent = sr.ReadToEnd();
                 ReadIntFromFile(FileContent, out List<int> listArticleID);
                 DiscretizateArticleID(listArticleID, out Dictionary<int, int> dictionaryDiscretization);
