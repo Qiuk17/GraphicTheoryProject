@@ -127,6 +127,99 @@ namespace GraphicTheoryProject
         }
     }
 
+    class DrawGraph //输出用于绘图的信息交给Processing 3绘图（JRE required）
+    {
+        private int Width, Height;//图片宽度、高度
+        private List<DrawCircle> Circles;
+        private List<DrawLine> Lines;
+
+        private class DrawPoint
+        {
+            public DrawPoint(int posX, int posY)
+            {
+                PosX = posX;
+                PosY = posY;
+            }
+
+            public int PosX { get; set; } //横坐标
+            public int PosY { get; set; } //纵坐标
+            public override string ToString()
+            {
+                return PosX.ToString() + ' ' + PosY.ToString();
+            }
+        }
+
+        private class Color
+        {
+            public Color(int r, int g, int b)
+            {
+                R = r;
+                G = g;
+                B = b;
+            }
+            public Color (int RGB) //用于生成渐变色
+            {
+                if(RGB <= 255)
+                {
+                    R = 255; G = RGB; B = 0;
+                }
+                else if(RGB <= 510)
+                {
+                    R = 510 - RGB;
+                    G = 255; B = 0;
+                }
+                else if(RGB <= 765)
+                {
+                    R = 0;
+                    G = 255; B = RGB - 510;
+                }
+                else if(RGB <= 1020)
+                {
+                    R = 0;
+                    G = 1020 - RGB;
+                    B = 255;
+                }
+            }
+            public int R { get; set; }
+            public int G { get; set; }
+            public int B { get; set; }
+            public override string ToString()
+            {
+                return R.ToString() + ' ' + G.ToString() + ' ' + B.ToString();
+            }
+        }
+
+        private class DrawLine
+        {
+            private DrawPoint StartPoint, EndPoint;
+            private Color StrokeColor;
+            public DrawLine(int x1, int y1, int x2, int y2, int R, int G, int B)
+            {
+                StrokeColor = new Color(R, G, B);
+                StartPoint = new DrawPoint(x1, y1);
+                EndPoint = new DrawPoint(x2, y2);
+            }
+            public override string ToString()
+            {
+                return StartPoint.ToString() + ' ' + EndPoint.ToString() + ' ' + StrokeColor.ToString();
+            }
+        }
+        private class DrawCircle
+        {
+            private DrawPoint CircleCenter;
+            private Color StrokeColor;
+            public DrawCircle(int x, int y, int RGB)
+            {
+                CircleCenter = new DrawPoint(x, y);
+                StrokeColor = new Color(RGB);
+            }
+            public override string ToString()
+            {
+                return CircleCenter.ToString() + ' ' + StrokeColor.ToString();
+            }
+        }
+    }
+
     class Program
     {
         static void ReadIntFromFile(string str, out List<int> array)
@@ -209,8 +302,9 @@ namespace GraphicTheoryProject
                 }
                 Console.ReadKey();
             }
-            catch (IOException e)
+            catch (Exception e)
             {
+                Console.WriteLine(e.GetType().ToString());
                 Console.WriteLine(e.Message);
                 Console.ReadKey();
             }
