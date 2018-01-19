@@ -63,7 +63,10 @@ namespace GraphicTheoryProject
         {
             return Nodes[NodeID].NumReachTo;
         }
-
+        public bool IsLinked(int NodeIDA, int NodeIDB)
+        {
+            return Nodes[NodeIDA].Succs.Contains(NodeIDB);
+        }
         public void InitGraph(Article[] articles)
         {
             Nodes = new Node[articles.Length];
