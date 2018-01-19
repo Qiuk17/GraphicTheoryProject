@@ -38,7 +38,7 @@ namespace GraphicTheoryProject
 
     class Graph //用于计算的图
     {
-        public class Node //图的节点
+        private class Node //图的节点
         {
             public HashSet<int> Succs { get; set; }
             public int CenDegreeA { get; set; } //该节点出现在其他节点对上最短路径上的次数（不包括两个端点）
@@ -50,7 +50,20 @@ namespace GraphicTheoryProject
                 return CenDegreeA.ToString() + ' ' + CenDegreeB.ToString() + ' ' + NumReachTo.ToString();
             }
         }
-        public Node[] Nodes { get; set; }
+        private Node[] Nodes { get; set; }
+        public int GetNodeCenDegreeA(int NodeID)
+        {
+            return Nodes[NodeID].CenDegreeA;
+        }
+        public int GetNodeCenDegreeB(int NodeID)
+        {
+            return Nodes[NodeID].CenDegreeB;
+        }
+        public int GetReachedNum(int NodeID)
+        {
+            return Nodes[NodeID].NumReachTo;
+        }
+
         public void InitGraph(Article[] articles)
         {
             Nodes = new Node[articles.Length];
@@ -190,7 +203,10 @@ namespace GraphicTheoryProject
                 Graph test = new Graph();
                 test.InitGraph(articleSet);
                 test.GraphAnalysis();
-
+                for(int i = 0; i < articleSet.Length; i++)
+                {
+                    Console.WriteLine(test.GetNodeCenDegreeA(i).ToString() + ' ' + test.GetNodeCenDegreeB(i).ToString() + ' ' + test.GetReachedNum(i).ToString());
+                }
                 Console.ReadKey();
             }
             catch (IOException e)
