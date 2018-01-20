@@ -50,7 +50,7 @@ namespace GraphicTheoryProject
                 return CenDegreeA.ToString() + ' ' + CenDegreeB.ToString() + ' ' + NumReachTo.ToString();
             }
         }
-        private Node[] Nodes { get; set; }
+        private Node[] Nodes;
         public int GetNodeCenDegreeA(int NodeID)
         {
             return Nodes[NodeID].CenDegreeA;
@@ -67,6 +67,7 @@ namespace GraphicTheoryProject
         {
             return Nodes[NodeIDA].Succs.Contains(NodeIDB);
         }
+        public int NodeNum { get => Nodes.Length; }
         public void InitGraph(Article[] articles)
         {
             Nodes = new Node[articles.Length];
@@ -107,7 +108,7 @@ namespace GraphicTheoryProject
                 }
             }
         }
-
+        
         public void GraphAnalysis()
         {
             for(int i = 0; i < Nodes.Length; i++)
@@ -130,11 +131,18 @@ namespace GraphicTheoryProject
         }
     }
 
-    class DrawGraph //输出用于绘图的信息交给Processing 3绘图（JRE required）
+    class DrawGraph //输出用于绘图的信息交给Processing 3绘图
     {
         private int Width, Height;//图片宽度、高度
         private List<DrawCircle> Circles;
         private List<DrawLine> Lines;
+
+        public DrawGraph()
+        {
+            Width = 1920; Height = 1080;
+            Circles = new List<DrawCircle>();
+            Lines = new List<DrawLine>();
+        }
 
         private class DrawPoint
         {
@@ -207,6 +215,7 @@ namespace GraphicTheoryProject
                 return StartPoint.ToString() + ' ' + EndPoint.ToString() + ' ' + StrokeColor.ToString();
             }
         }
+
         private class DrawCircle
         {
             private DrawPoint CircleCenter;
@@ -220,6 +229,118 @@ namespace GraphicTheoryProject
             {
                 return CircleCenter.ToString() + ' ' + StrokeColor.ToString();
             }
+        }
+
+        private class Vector
+        {
+            public double DiractionX, DiractionY;
+            public double GetLength()
+            {
+                return Math.Sqrt(DiractionX * DiractionX + DiractionY * DiractionY);
+            }
+            public Vector(double diractionX, double diractionY)
+            {
+                if (double.IsNaN(diractionX)) diractionX = 1e9;
+                if (double.IsNaN(diractionY)) diractionY = 1e9;
+                DiractionX = diractionX;
+                DiractionY = diractionY;
+            }
+           public Vector(double diractionX, double diractionY, double length)
+            {
+                //Console.WriteLine("using {0},{1} L={2}", diractionX, diractionY, length);
+                if (double.IsNaN(length)) length = 1e9;
+                DiractionX = diractionX; DiractionY = diractionY;
+                double LL = length / GetLength();
+                DiractionX *= LL;
+                DiractionY *= LL;
+                //Console.WriteLine("We get ({0},{1})", DiractionX, DiractionY);
+            }
+            static public Vector operator + (Vector lhs, Vector rhs)
+            {
+                return new Vector(lhs.DiractionX + rhs.DiractionX, lhs.DiractionY + rhs.DiractionY);
+            }
+        }
+
+        private class Point
+        {
+            public double x, y;
+            private static double maxX = 1920.0, maxY = 1080.0;
+            public static double MaxX => maxX;
+            public static double MaxY => maxY;
+
+            public Point(double _x, double _y)
+            {
+                x = _x; y = _y;
+            }
+            public Point(ref Random r)
+            {
+                x = r.NextDouble() * maxX;
+                y = r.NextDouble() * maxY;
+            }
+            public void SetIntoRange()
+            {
+                x = Math.Max(0.0, x);
+                x = Math.Min(maxX, x);
+                y = Math.Max(0.0, y);
+                y = Math.Min(maxY, y);
+            }
+            public static Vector operator - (Point lhs, Point rhs)
+            {
+                return new Vector(rhs.x - lhs.x, rhs.y - lhs.y);
+            }
+            
+            public static Point operator + (Point lhs, Vector rhs)
+            {
+                return new Point(lhs.x + rhs.DiractionX, lhs.y + rhs.DiractionY);
+            }
+        }
+
+        public void GraphGen(Graph graph)
+        {
+            Point[] points = new Point[graph.NodeNum];
+            Random r = new Random();
+            for(int i = 0; i < graph.NodeNum; i++) points[i] = new Point(ref r);
+            bool[][] g = new bool[points.Length][];
+            for (int i = 0; i < points.Length; i++) g[i] = new bool[points.Length];
+            for (int i = 0; i < points.Length; i++)
+                for (int j = i + 1; j < points.Length; j++)
+                    g[i][j] = g[j][i] = graph.IsLinked(i, j);
+            const double MinT = 1E-2, Delta = 1 - 1E-1;
+            for(double T = 100.0; T > MinT; T *= Delta)
+            {
+                Console.WriteLine(T);
+                //Console.ReadKey();
+
+                Vector[] PointsDelta = new Vector[points.Length];
+                Parallel.For(0, points.Length, i =>
+               {
+                   PointsDelta[i] = new Vector(0.0, 0.0);
+                   for (int j = 0; j < points.Length; j++)
+                   {
+                       if (i == j) continue;
+                       double delX = points[j].x - points[i].x, delY = points[j].y - points[i].y;
+                       double SqrVecLen = delX * delX + delY * delY;
+                       PointsDelta[i] = PointsDelta[i] + new Vector(-delX, -delY, T * 0.027 / SqrVecLen);
+                       if (g[i][j]) PointsDelta[i] = PointsDelta[i] + new Vector(delX, delY, T * 0.000001 * Math.Sqrt(SqrVecLen));
+                       //Console.WriteLine("({0},{1})", PointsDelta[i].DiractionX, PointsDelta[i].DiractionY);
+                       //Console.WriteLine("From ({0},{1}) to ({2},{3}) deltaX={4} deltaY={5} Length={6}", points[i].x, points[i].y, points[j].x, points[j].y, delX, delY, Math.Sqrt(SqrVecLen));
+                   }
+               });
+                Parallel.For(0, points.Length, i =>
+               {
+                   //Console.Write("({0},{1}) + vec({2},{3}) is ", points[i].x, points[i].y, PointsDelta[i].DiractionX, PointsDelta[i].DiractionY);
+                   points[i] = points[i] + PointsDelta[i];
+                   //Console.WriteLine("({0},{1})", points[i].x, points[i].y);
+                   points[i].SetIntoRange();
+               });
+            }
+            StreamWriter sw = new StreamWriter(@"res.txt", true, Encoding.UTF8);
+            DrawPoint[] drawPoints = new DrawPoint[points.Length];
+            for (int i = 0; i < points.Length; i++)
+                drawPoints[i] = new DrawPoint((int)points[i].x, (int)points[i].y);
+            for (int i = 0; i < points.Length; i++)
+                for (int j = i + 1; j < points.Length; j++)
+                    if (g[i][j]) sw.WriteLine(drawPoints[i].ToString() + ' ' + drawPoints[j].ToString());
         }
     }
 
@@ -303,6 +424,9 @@ namespace GraphicTheoryProject
                 {
                     Console.WriteLine(test.GetNodeCenDegreeA(i).ToString() + ' ' + test.GetNodeCenDegreeB(i).ToString() + ' ' + test.GetReachedNum(i).ToString());
                 }
+                DrawGraph test1 = new DrawGraph();
+                test1.GraphGen(test);
+
                 Console.ReadKey();
             }
             catch (Exception e)
