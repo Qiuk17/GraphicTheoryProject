@@ -42,11 +42,12 @@ namespace GraphicTheoryProject
         {
             private class Node //图的节点
             {
+                public int ID { get; }
                 public HashSet<int> Succs { get; set; }
-                public int CenDegreeB { get; set; } //该节点出现在其他节点对上最短路径上的次数（不包括两个端点）
-                public int CenDegreeA { get; set; } //该节点到其他所有联通的节点的最短路径之和
+                public int CenDegreeB { get; set; } //该节点出现在其他节点对上最短路径上的次数（不包括两个端点，大-重要）
+                public int CenDegreeA { get; set; } //该节点到其他所有联通的节点的最短路径之和（小-重要）
                 public int NumReachTo { get; set; } //该节点可以联通的节点数量（不包括自身）
-                public Node() { Succs = new HashSet<int>(); CenDegreeA = CenDegreeB = NumReachTo = 0; }
+                public Node(int id) { ID = id; Succs = new HashSet<int>(); CenDegreeA = CenDegreeB = NumReachTo = 0; }
                 public override string ToString()
                 {
                     return CenDegreeA.ToString() + ' ' + CenDegreeB.ToString() + ' ' + NumReachTo.ToString();
@@ -75,7 +76,7 @@ namespace GraphicTheoryProject
                 Nodes = new Node[articles.Length];
                 for (int i = 0; i < articles.Length; i++)
                 {
-                    Nodes[i] = new Node();
+                    Nodes[i] = new Node(i);
                 }
 
                 foreach (var article in articles)
@@ -86,10 +87,17 @@ namespace GraphicTheoryProject
                         Nodes[refDiscretizatedID].Succs.Add(article.DiscretizatedID);
                     }
                 }
+                GraphAnalysis();
+                for(int i = 0; i < Nodes.Length; i++)
+                {
+                    if (Nodes[i].CenDegreeA == 0) Nodes[i].CenDegreeA = 100000000;
+                    if (Nodes[i].CenDegreeB == 0) Nodes[i].CenDegreeB = 1;
+                }
             }
+
+
             public void GetSingleSourceShortestPath(int source, out int[] Path)
             {
-                List<int>[] SourcedPath = new List<int>[Nodes.Length];
                 Path = new int[Nodes.Length];
                 int[] d = new int[Nodes.Length];
                 for (int i = 0; i < Nodes.Length; i++)
@@ -111,6 +119,46 @@ namespace GraphicTheoryProject
                             Q.Enqueue(nextNode);
                         }
                     }
+                }
+            }
+
+            public void GetMiniSpanTree(out int[] Fa)
+            {
+                Fa = new int[Nodes.Length];
+                bool[] vis = new bool[Nodes.Length];
+                for(int i = 0; i < Nodes.Length; i++)
+                {
+                    Fa[i] = -1; vis[i] = false;
+                }
+                for(int i = 0; i < Nodes.Length; i++)
+                {
+                    if(!vis[i])
+                    {
+                        DFS(i, ref vis, ref Fa, -1);
+                    }
+                }
+            }
+            private void DFS(int u, ref bool[] vis, ref int[] Fa, int fa)
+            {
+                vis[u] = true;
+                Fa[u] = fa;
+                foreach(var v in Nodes[u].Succs)
+                {
+                    if(!vis[v])
+                    {
+                        DFS(v, ref vis, ref Fa, u);
+                    }
+                }
+            }
+
+            public void GetImportanceSortedNodes(out int[] OrderedNodes)
+            {
+                OrderedNodes = new int[Nodes.Length];
+                List<Node> list = new List<Node>(Nodes);
+                Node[] orderedNodes = list.OrderBy(i => i.CenDegreeA / (double)i.CenDegreeB).ToArray();
+                for(int i = 0; i < Nodes.Length; i++)
+                {
+                    OrderedNodes[i] = orderedNodes[i].ID;
                 }
             }
 
@@ -137,6 +185,7 @@ namespace GraphicTheoryProject
                     }
                 }
             }
+            
         }
 
         class DrawGraph //输出用于绘图的信息交给Processing 3绘图
@@ -311,9 +360,10 @@ namespace GraphicTheoryProject
 
                 const double MinT = 1E-4, Delta = 1 - 1E-1;
                 double k = Math.Sqrt(1920.0 * 1080.0 / points.Length);
+                Console.Write("正在计算结点的坐标");
                 for (double T = k / 2; T > MinT; T *= Delta)
                 {
-                    Console.WriteLine(T);
+                    Console.Write('.');
                     //Console.ReadKey();
 
                     Vector[] PointsDelta = new Vector[points.Length];
@@ -340,25 +390,130 @@ namespace GraphicTheoryProject
                         points[i].SetIntoRange();
                     });
                 }
-                StreamWriter sw = new StreamWriter(@"res.txt", false, Encoding.UTF8);
+
                 drawPoints = new DrawPoint[points.Length];
                 for (int i = 0; i < points.Length; i++)
                     drawPoints[i] = new DrawPoint((int)points[i].x, (int)points[i].y);
-
-                sw.Close();
+                Console.Clear();
             }
 
-            public void PrintLine(DrawPoint StartPoint, DrawPoint EndPoint, Color color)
+            public void PrintLine(int StartPointID, int EndPointID, Color color)
             {
-                streamWriter.WriteLine(1.ToString() + ' ' + StartPoint.ToString() + ' ' + EndPoint.ToString() + ' ' + color.ToString());
+                streamWriter.WriteLine(drawPoints[StartPointID].ToString() + ' ' + drawPoints[EndPointID].ToString() + ' ' + color.ToString());
             }
-            public void PrintCircle(DrawPoint CircleCenter, int Radius, Color color)
+            public void PrintCircle(int CircleCenterID, int Radius, Color color)
             {
-                streamWriter.WriteLine(2.ToString() + ' ' + CircleCenter.ToString() + ' ' + Radius.ToString() + ' ' + color.ToString());
+                streamWriter.WriteLine(drawPoints[CircleCenterID].ToString() + ' ' + Radius.ToString() + ' ' + color.ToString());
+            }
+
+            public void EndPrint()
+            {
+                streamWriter.Close();
             }
         }
-    }
 
+        Graph graph;
+        DrawGraph drawGraph;
+
+        public GraphGenerator(Article[] articleSet)
+        {
+            graph = new Graph();
+            graph.InitGraph(articleSet);
+            drawGraph = new DrawGraph();
+            drawGraph.GraphGen(graph);
+        }
+        private void PrintAllGraphT(int ColorGray)
+        {
+            for(int i = 0; i < drawGraph.DrawPoints.Length; i++)
+            {
+                for(int j = i + 1; j < drawGraph.DrawPoints.Length; j++)
+                {
+                    if (graph.IsLinked(i, j))
+                    {
+                        drawGraph.PrintLine(i, j, new DrawGraph.Color(ColorGray, ColorGray, ColorGray));
+                    }
+                }
+            }
+        }
+
+        public void PrintGraphBase()
+        {
+            PrintAllGraphT(200);
+        }
+
+        private static void ToGraph()
+        {
+            System.Diagnostics.Process np = System.Diagnostics.Process.Start("sketch.exe");
+            np.WaitForExit();
+        }
+
+        public void PrintAllGraph()
+        {
+            PrintAllGraphT(0);
+            drawGraph.EndPrint();
+            ToGraph();
+        }
+        public void PrintShortestPath(Dictionary<int, int> dictionary)
+        {
+            PrintGraphBase();
+            Console.Write("请输入起点的编号:");
+            bool rtn1 = int.TryParse(Console.ReadLine(), out int StartPos);
+            Console.Write("请输入终点的编号:");
+            bool rtn2 = int.TryParse(Console.ReadLine(), out int EndPos);
+            if(rtn1 && rtn2 && dictionary.ContainsKey(StartPos) && dictionary.ContainsKey(EndPos))
+            {
+                int StartPointID = dictionary[StartPos], EndPointID = dictionary[EndPos];
+                graph.GetSingleSourceShortestPath(EndPointID, out int[] Path);
+                if(Path[StartPointID] == -1)
+                {
+                    Console.WriteLine("路径不存在，两点之间不连通。");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    for(int p = StartPointID, q = Path[StartPointID]; q != -1; p = Path[p], q = Path[q])
+                    {
+                        drawGraph.PrintLine(p, q, new DrawGraph.Color(0, 0, 0));
+                        drawGraph.PrintCircle(p, 10, new DrawGraph.Color(0, 0, 0));
+                        drawGraph.PrintCircle(q, 10, new DrawGraph.Color(0, 0, 0));
+                    }
+                    drawGraph.EndPrint();
+                    ToGraph();
+                }
+            }
+            else
+            {
+                Console.WriteLine("输入有误，请确认后再输入。");
+                Environment.Exit(1);
+            }
+        }
+        public void PrintMiniSpanTree()
+        {
+            PrintGraphBase();
+            graph.GetMiniSpanTree(out int[] Fa);
+            for(int i = 0; i < Fa.Length; i++)
+            {
+                drawGraph.PrintCircle(i, 10, new DrawGraph.Color(0, 0, 0));
+                if(Fa[i] != -1)
+                {
+                    drawGraph.PrintLine(i, Fa[i], new DrawGraph.Color(0, 0, 0));
+                }
+            }
+            drawGraph.EndPrint();
+            ToGraph();
+        }
+        public void PrintImportance()
+        {
+            PrintGraphBase();
+            graph.GetImportanceSortedNodes(out int[] OrderedNodes);
+            for (int i = 0; i < OrderedNodes.Length; i++)
+            {
+                drawGraph.PrintCircle(OrderedNodes[i], 10, new DrawGraph.Color((int)Math.Round(i * (1050 / (double)OrderedNodes.Length))));
+            }
+            drawGraph.EndPrint();
+            ToGraph();
+        }
+    }
 
     class Program
     {
@@ -443,7 +598,8 @@ namespace GraphicTheoryProject
             DisplayMode = 1;
             Console.Write("请输入输出的类型（1：最短路； 2：最小生成树； 3.结点关键程度； 4：图完整输出（规模较大时不推荐））:");
             DisplayMode = int.Parse(Console.ReadKey().KeyChar.ToString());
-            Console.WriteLine("\n你选择的文件是{0}，输出类型为{1}.", FilePath, DisplayMode);
+            Console.WriteLine("\n你选择的文件是{0}，输出类型为{1}.\n按任意键继续.", FilePath, DisplayMode);
+            Console.ReadKey();
         }
 
         static void Main(string[] args)
@@ -469,8 +625,29 @@ namespace GraphicTheoryProject
 
                 //DrawGraph drawGraph = new DrawGraph();
                 //drawGraph.GraphGen(graph);
-
-                Console.ReadKey();
+                GraphGenerator graphGenerator = new GraphGenerator(articleSet);
+                if(DisplayMode == 1)
+                {
+                    graphGenerator.PrintShortestPath(dictionaryDiscretization);
+                }
+                else if(DisplayMode == 2)
+                {
+                    graphGenerator.PrintMiniSpanTree();
+                }
+                else if(DisplayMode == 3)
+                {
+                    graphGenerator.PrintImportance();
+                }
+                else if(DisplayMode == 4)
+                {
+                    graphGenerator.PrintAllGraph();
+                }
+                else
+                {
+                    Console.Write("输入有误");
+                    Console.ReadKey();
+                }
+                //Console.ReadKey();
             }
             catch (Exception e)
             {
