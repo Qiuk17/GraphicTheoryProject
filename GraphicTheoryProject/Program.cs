@@ -305,8 +305,9 @@ namespace GraphicTheoryProject
             for (int i = 0; i < points.Length; i++)
                 for (int j = i + 1; j < points.Length; j++)
                     g[i][j] = g[j][i] = graph.IsLinked(i, j);
-            const double MinT = 1E-2, Delta = 1 - 1E-1;
-            for(double T = 100.0; T > MinT; T *= Delta)
+            const double MinT = 1E-4, Delta = 1 - 1E-1;
+            double k = Math.Sqrt(1920.0*1080.0/ points.Length);
+            for(double T = k/2; T > MinT; T *= Delta)
             {
                 Console.WriteLine(T);
                 //Console.ReadKey();
@@ -320,8 +321,8 @@ namespace GraphicTheoryProject
                        if (i == j) continue;
                        double delX = points[j].x - points[i].x, delY = points[j].y - points[i].y;
                        double SqrVecLen = delX * delX + delY * delY;
-                       PointsDelta[i] = PointsDelta[i] + new Vector(-delX, -delY, T * 0.027 / SqrVecLen);
-                       if (g[i][j]) PointsDelta[i] = PointsDelta[i] + new Vector(delX, delY, T * 0.000001 * Math.Sqrt(SqrVecLen));
+                       PointsDelta[i] = PointsDelta[i] + new Vector(-delX, -delY, k*k/Math.Sqrt(SqrVecLen));
+                       if (g[i][j]) PointsDelta[i] = PointsDelta[i] + new Vector(delX, delY, SqrVecLen/k);
                        //Console.WriteLine("({0},{1})", PointsDelta[i].DiractionX, PointsDelta[i].DiractionY);
                        //Console.WriteLine("From ({0},{1}) to ({2},{3}) deltaX={4} deltaY={5} Length={6}", points[i].x, points[i].y, points[j].x, points[j].y, delX, delY, Math.Sqrt(SqrVecLen));
                    }
@@ -329,6 +330,7 @@ namespace GraphicTheoryProject
                 Parallel.For(0, points.Length, i =>
                {
                    //Console.Write("({0},{1}) + vec({2},{3}) is ", points[i].x, points[i].y, PointsDelta[i].DiractionX, PointsDelta[i].DiractionY);
+                   if (PointsDelta[i].GetLength() > T) PointsDelta[i] = new Vector(PointsDelta[i].DiractionX, PointsDelta[i].DiractionY, T);
                    points[i] = points[i] + PointsDelta[i];
                    //Console.WriteLine("({0},{1})", points[i].x, points[i].y);
                    points[i].SetIntoRange();
@@ -340,7 +342,7 @@ namespace GraphicTheoryProject
                 drawPoints[i] = new DrawPoint((int)points[i].x, (int)points[i].y);
             for (int i = 0; i < points.Length; i++)
                 for (int j = i + 1; j < points.Length; j++)
-                    if (g[i][j]) sw.WriteLine(drawPoints[i].ToString() + ' ' + drawPoints[j].ToString());
+                    if (g[i][j]) { sw.WriteLine(drawPoints[i].ToString() + ' ' + drawPoints[j].ToString());}
         }
     }
 
@@ -435,7 +437,7 @@ namespace GraphicTheoryProject
                 Console.WriteLine(e.Message);
                 Console.ReadKey();
             }
-            
+
         }
     }
 }
